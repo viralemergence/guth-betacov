@@ -229,7 +229,7 @@ make.map.data <- function(data, n.boots, simp.list){
 simp.list <- gbm.simp$pred.list[[6]]
 # simp.list <- c(10, 11, 37, 38, 39, 40, 41, 42, 43, 45, 46, 47, 48, 49, 50, 51, 53, 59, 66)
 
-n.boots <- 4
+n.boots <- 1000
 gbm.boot <- make.map.data(data = batdf, n.boots = n.boots, simp.list = simp.list)
 
 ## Plot variable relative influence coefficients
