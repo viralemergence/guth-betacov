@@ -260,17 +260,17 @@ print(p)
 pred_dat <- as.data.frame(gbm.boot$Prediction)
 pred_dat$pred_med <- apply(pred_dat, 1, median, na.rm = TRUE)
 
-# A density plot in the style of Becker
-batdf %>%
-  ggplot(aes(pred_dat$pred_med,
-             fill = factor(betacov),
-             colour = factor(betacov))) +
-  geom_density(alpha = 0.1)
-
 # Top rankings
 pred_dat$host_species <- rownames(pred_dat)
 pred_med_dat <- pred_dat[ ,c("host_species", "pred_med")]
 pred_merge <- merge(batdf, pred_med_dat, by = "host_species", all.x = TRUE)
+
+# A density plot in the style of Becker
+pred_merge %>%
+  ggplot(aes(pred_merge$pred_med,
+             fill = factor(betacov),
+             colour = factor(betacov))) +
+  geom_density(alpha = 0.1)
 
 # pred_merge %>%
 #   as_tibble() %>%
