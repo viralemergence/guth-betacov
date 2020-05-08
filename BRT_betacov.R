@@ -127,7 +127,7 @@ gbm.simp <- gbm.simplify(gbm.mod, n.drops = 10)
 
 #refit model with the optimal reduced variable set
 gbm.reduced <- gbm.step(data = batdf,
-                        gbm.x = gbm.simp$pred.list[[6]], # these are the predictors, can also be column #s
+                        gbm.x = gbm.simp$pred.list[[7]], # these are the predictors, can also be column #s
                         gbm.y = "betacov", # response
                         family = "bernoulli",
                         tree.complexity = 2,
@@ -229,7 +229,7 @@ make.map.data <- function(data, n.boots, simp.list){
 }
 
 ## run function ##
-simp.list <- gbm.simp$pred.list[[6]]
+simp.list <- gbm.simp$pred.list[[7]] # This has to change every time
 # simp.list <- c(10, 11, 37, 38, 39, 40, 41, 42, 43, 45, 46, 47, 48, 49, 50, 51, 53, 59, 66)
 
 n.boots <- 1000
