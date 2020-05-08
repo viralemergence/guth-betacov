@@ -1,5 +1,6 @@
-setwd("~/Documents/Berkeley/VirusNet/BRT")
 rm(list = ls())
+
+set.seed(05082020)
 
 library(gbm)
 library(dplyr)
@@ -14,8 +15,8 @@ library(forcats)
 library(PresenceAbsence)
 library(reshape2)
 
-read_csv('BatCoV-assoc.csv') %>% filter(origin == 'Anthony') -> batcov
-read_csv('Han-BatTraits.csv') -> traits
+read_csv('~/GitHub/cleanbats_betacov/clean data/BatCoV-assoc_compatible.csv') %>% filter(origin == 'Anthony') -> batcov
+read_csv('~/GitHub/cleanbats_betacov/clean data/Han-BatTraits_compatible.csv') -> traits
 
 # Add outcome variables
 batcov %>% mutate(betacov = as.numeric(virus_genus == 'Betacoronavirus'),
@@ -121,10 +122,11 @@ gbm.mod <- gbm.step(data = batdf,
 
 #function that compares prediction performance of variable drops
 gbm.simp <- gbm.simplify(gbm.mod, n.drops = 10)
+n.simp <- which(gbm.simp$deviance.summary$mean == min(gbm.simp$deviance.summary$mean))
 
 #refit model with the optimal reduced variable set
 gbm.reduced <- gbm.step(data = batdf,
-                        gbm.x = gbm.simp$pred.list[[6]], # these are the predictors, can also be column #s
+                        gbm.x = gbm.simp$pred.list[[n.simp]], # these are the predictors, can also be column #s
                         gbm.y = "betacov", # response
                         family = "bernoulli",
                         tree.complexity = 2,
@@ -226,7 +228,7 @@ make.map.data <- function(data, n.boots, simp.list){
 }
 
 ## run function ##
-simp.list <- gbm.simp$pred.list[[6]]
+simp.list <- gbm.simp$pred.list[[n.simp]]
 # simp.list <- c(10, 11, 37, 38, 39, 40, 41, 42, 43, 45, 46, 47, 48, 49, 50, 51, 53, 59, 66)
 
 n.boots <- 1000
