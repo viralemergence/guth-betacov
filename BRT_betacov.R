@@ -1,7 +1,5 @@
-
+setwd("~/Documents/Berkeley/VirusNet/BRT")
 rm(list = ls())
-
-set.seed(8675309)
 
 library(gbm)
 library(dplyr)
@@ -16,10 +14,8 @@ library(forcats)
 library(PresenceAbsence)
 library(reshape2)
 
-read_csv('~/Github/cleanbats_betacov/clean data/BatCoV-assoc_clean.csv') %>% filter(origin == 'Anthony') -> batcov
-read_csv('~/Github/cleanbats_betacov/clean data/Han-BatTraits_clean.csv') -> traits
-
-traits <- traits[,-c(1,3,4,5,6)]
+read_csv('BatCoV-assoc.csv') %>% filter(origin == 'Anthony') -> batcov
+read_csv('Han-BatTraits.csv') -> traits
 
 # Add outcome variables
 batcov %>% mutate(betacov = as.numeric(virus_genus == 'Betacoronavirus'),
@@ -48,7 +44,8 @@ batcov <- batcov %>%
             sarbecov = shorthand(sarbecov))
 
 # Create binomial names in the trait data
-traits %>% dplyr::rename(host_species = clean_hostnames) -> traits
+traits %>% mutate(host_species = paste(MSW05_Genus, MSW05_Species)) %>%
+  mutate() -> traits
 
 # Add traits and associations
 right_join(batcov, traits) %>%
@@ -63,8 +60,8 @@ batdf %>% dummy_cols('ForStrat.Value') %>%
   dplyr::select(-ForStrat.Value) -> batdf
 
 # Drop any variable with > 50% NA's
-varnums <- c(4:70) #everything subtracted by 4 because I got rid of four extra columns at the start?
-suf_val <- 3 + unname(which(c(colSums(is.na(batdf[,varnums]))/nrow(batdf)) < 0.5))
+varnums <- c(8:74)
+suf_val <- 7 + unname(which(c(colSums(is.na(batdf[,varnums]))/nrow(batdf)) < 0.5))
 
 # Drop variables with insufficient variation
 # mode function
@@ -74,7 +71,7 @@ mode.prop <- function(x) {
   max(tab)/length(x[is.na(x)==FALSE])
 }
 # remove if 97% or more of values == the mod
-suf_var <- 3 + unname(which(c(apply(batdf[,varnums], 2, mode.prop)) < 0.97))
+suf_var <- 7 + unname(which(c(apply(batdf[,varnums], 2, mode.prop)) < 0.97))
 
 # only include variables with BOTH sufficient values and variation
 var.names <- intersect(suf_val, suf_var)
