@@ -1,4 +1,4 @@
-rm(list = ls())
+# rm(list = ls())
 
 set.seed(05082020)
 
@@ -21,8 +21,14 @@ quietly <- function(x) {
   invisible(force(x))
 }  # THANKS HADLEY
 
-read_csv('~/GitHub/virionette/03_interaction_data/virionette.csv') %>% filter(host_order == 'Chiroptera') -> batcov
-read_csv('~/GitHub/virionette/04_predictors/Han-BatTraits.csv') -> traits
+read.csv(paste0(here::here(), '/Github/Repos/virionette/03_interaction_data/virionette.csv')) %>% 
+  filter(host_order == 'Chiroptera') -> 
+  
+  batcov
+
+read.csv(paste0(here::here(), '/Github/Repos/virionette/04_predictors/Han-BatTraits.csv')) -> 
+  
+  traits
 
 # Add outcome variables 
 
@@ -124,24 +130,24 @@ gbm.reduced <- gbm.step(data = batdf,
 
 ####### BOOTSTRAPPED BRT FUNCTION #######
 make.map.data <- function(data, n.boots, simp.list){
-
+  
   #### make empty vectors for outputs across bootstrap samples:
   # 1) AUC, 2) mean deviance, 3) host predictions, 4) relative variable importance coefficients
   auc.results <- vector()
   dev.results <- vector()
   preds <- matrix(NA, nrow = length(batdf$host_species), ncol = n.boots)
   var.imp <- matrix(NA, nrow = length(simp.list), ncol = n.boots)
-
+  
   #### subset the data to have one df for presences (betacov = 1) and one for absences (background, bg, pseudoabsences)
   pres.dat <- batdf[batdf$betacov==1,]
   num.pres <- dim(pres.dat)[1]
   bg.dat <- batdf[batdf$betacov ==0,]
-
+  
   #### for each bootstrap run, we'll subset the data to a different training and test set
   for(i in 1:n.boots){
-
+    
     ## generate a TRAINING dataset that has equal number of presences and pseudoabs
-
+    
     # randomly pick presences (with replacement) to match total number of unique presences in the data (num.pres = 76)
     boot.train.pres <- sample(num.pres, replace = T) #randomly samples 76 indices btw 1-76, can pick same index twice
     train.pres.data <- pres.dat[boot.train.pres,] #subsets with random set of indices
@@ -150,22 +156,22 @@ make.map.data <- function(data, n.boots, simp.list){
     train.abs.data <- bg.dat[boot.train.abs,] #subsets with random set of indices
     # combine pres and abs data
     boot.dat <- plyr::rbind.fill(train.pres.data, train.abs.data)
-
+    
     ## now run gbm.step on bootstrapped dataset - this is the meat of the classification tree
-
+    
     # gbm.step() will give optimal number of boosting trees (for pred step) using k-fold cross validation (cv)
     # glm.fit warning messages due to small sample size--can ignore
-     gbm.reduced <- quietly(gbm.step(data = boot.dat,
-                            gbm.x = simp.list, # these are the predictors, can also be column #s
-                            gbm.y = "betacov", # response
-                            family = "bernoulli",
-                            tree.complexity = 2,
-                            learning.rate = 0.005,
-                            bag.fraction = 0.75, # controls for stochasticity
-                            max.trees = 100000))
-
+    gbm.reduced <- quietly(gbm.step(data = boot.dat,
+                                    gbm.x = simp.list, # these are the predictors, can also be column #s
+                                    gbm.y = "betacov", # response
+                                    family = "bernoulli",
+                                    tree.complexity = 2,
+                                    learning.rate = 0.005,
+                                    bag.fraction = 0.75, # controls for stochasticity
+                                    max.trees = 100000))
+    
     ## TEST set: out-of-bag = presences and absences data pointsnot included in the training set
-
+    
     # Get out of bag presences = presence data points not included in the training set (a few remaining from the original 76)
     boot.test.pres <- (1:nrow(pres.dat))[-boot.train.pres]
     test.pres.data <- pres.dat[boot.test.pres,]
@@ -174,13 +180,13 @@ make.map.data <- function(data, n.boots, simp.list){
     test.abs.data <- bg.dat[boot.test.abs,]
     # Form the test dataset by binding oob presences and absences
     test.dat = plyr::rbind.fill(test.pres.data, test.abs.data)
-
+    
     ## Predict and assess model
     test.dat$preds <- quietly(predict.gbm(gbm.reduced,
-                         test.dat,
-                         n.trees = gbm.reduced$gbm.call$best.trees,
-                         type = "response"))
-
+                                          test.dat,
+                                          n.trees = gbm.reduced$gbm.call$best.trees,
+                                          type = "response"))
+    
     test.dat <- test.dat[ ,c("host_species", "betacov", "preds")]
     merged <- merge(batdf, test.dat, by = "host_species", all.x=TRUE)
     merged_order <- merged[order(merged$host_species), ]
@@ -191,23 +197,23 @@ make.map.data <- function(data, n.boots, simp.list){
     #library(verification)
     roc <- roc.area(test.dat$betacov, test.dat$preds)
     auc <- roc$A
-
+    
     auc.results[i] <- auc
-
+    
     ## Variable relative influence coefficients
     summ <- data.frame(summary(gbm.reduced)) # coefficients for the 38 variables
     summ_order <- summ[order(summ$var), ]
     var.imp[ ,i] <- summ_order$rel.inf
-
+    
     #status update
     print(paste('boot', i, '/', n.boots))
-
+    
   }
-
+  
   #format names of prediction and relative influence matrices
   row.names(preds) <- merged_order$host_species
   row.names(var.imp) <- summ_order$var
-
+  
   results.list <- list("AUC" = auc.results,
                        "Deviance" = dev.results,
                        "Prediction" = preds,

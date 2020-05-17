@@ -21,14 +21,22 @@ quietly <- function(x) {
   invisible(force(x))
 }  # THANKS HADLEY
 
-read_csv('~/GitHub/virionette/03_interaction_data/virionette.csv') %>% filter(host_order == 'Chiroptera') -> batcov
-read_csv('~/GitHub/virionette/04_predictors/Han-BatTraits.csv') -> traits
+read.csv(paste0(here::here(), '/Github/Repos/virionette/03_interaction_data/virionette.csv')) %>% 
+  
+  filter(host_order == 'Chiroptera') -> 
+  
+  batcov
+
+read.csv(paste0(here::here(), '/Github/Repos/virionette/04_predictors/Han-BatTraits.csv')) -> 
+  
+  traits
 
 # Add outcome variables 
 
 batcov %>% mutate(betacov = as.numeric(virus_genus == 'Betacoronavirus')) -> batcov
 
 batcov %>% dplyr::select(host_species, betacov) %>% unique -> batcov
+
 batcov %>% group_by(host_species) %>% summarize(betacov = max(betacov)) -> batcov
 
 # Create binomial names in the trait data
