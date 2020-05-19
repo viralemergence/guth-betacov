@@ -1,4 +1,4 @@
-rm(list = ls())
+# rm(list = ls())
 
 set.seed(05082020)
 
@@ -37,7 +37,7 @@ batcov %>% mutate(betacov = as.numeric(virus_genus == 'Betacoronavirus')) -> bat
 
 batcov %>% dplyr::select(host_species, betacov) %>% unique -> batcov
 
-batcov %>% group_by(host_species) %>% summarize(betacov = max(betacov)) -> batcov
+batcov %>% group_by(host_species) %>% dplyr::summarize(betacov = max(betacov)) -> batcov
 
 # Create binomial names in the trait data
 
@@ -55,7 +55,7 @@ batdf %>% dummy_cols('ForStrat.Value') %>%
   dplyr::select(-ForStrat.Value) -> batdf
 
 # Citations
-read_csv('~/GitHub/virionette/04_predictors/Citations.csv')[,-1] %>%
+read.csv(paste0(here::here(), '/Github/Repos/virionette/04_predictors/Citations.csv'))[,-1] %>%
   rename(host_species = name) -> cites
 
 batdf <- left_join(batdf, cites)
@@ -255,7 +255,7 @@ var_ord <- var_dat[order(-var_dat$med), ]
 var_top <- var_ord[1:10, ]
 #drop median column and convert bootstrap samples to long format for boxplot
 var_top <- subset(var_top, select = c(-med))
-var_long <- melt(var_top, id.vars = "coef", variable.name = "bootstrap", value.name = "value")
+var_long <- reshape2::melt(var_top, id.vars = "coef", variable.name = "bootstrap", value.name = "value")
 
 
 ## Build boxplot
